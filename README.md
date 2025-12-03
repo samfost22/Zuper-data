@@ -75,32 +75,40 @@ Fetch jobs with pagination and filtering.
 ```python
 response = client.get_all_jobs(
     page=1,
-    limit=100,
+    count=100,
     sort="DESC",
-    sort_by="created_at",
+    sort_by="scheduled_start_time",
     from_date="2024-01-01",
     to_date="2024-12-31",
-    status="completed",
+    job_status="COMPLETED",
+    priority="HIGH",
 )
 ```
 
 **Parameters:**
 - `page` (int): Page number (default: 1)
-- `limit` (int): Results per page (default: 100)
+- `count` (int): Results per page (default: 100, max: 1000)
 - `sort` (str): Sort direction - 'ASC' or 'DESC'
-- `sort_by` (str): Field to sort by
-- `from_date` (str): Start date filter (YYYY-MM-DD)
-- `to_date` (str): End date filter (YYYY-MM-DD)
-- `status` (str): Filter by job status
-- `customer_uid` (str): Filter by customer
-- `user_uid` (str): Filter by assigned user
+- `sort_by` (str): Field to sort by - 'work_order_number', 'job_priority', 'scheduled_start_time', 'due_date'
+- `date_type` (str): Date type for filtering - 'scheduled_date', 'created_date', 'current_status_updated_at'
+- `priority` (str): Filter by priority - 'URGENT', 'HIGH', 'MEDIUM', 'LOW'
+- `customer` (str): Filter by customer UIDs
+- `category` (str): Filter by category UIDs
+- `keyword` (str): Search keyword
+- `job_status` (str): Filter by job status
+- `from_date` (str): Filter by scheduled from date
+- `to_date` (str): Filter by scheduled to date
+- `assigned_to` (str): Filter by assigned user UIDs
+- `asset` (str): Filter by asset UIDs
+- `custom_field` (str): Filter by custom field
+- `job_type` (str): Filter by job type - 'NEW', 'REVISIT'
 
 ### `iter_all_jobs()`
 
 Generator that iterates through all jobs, handling pagination automatically.
 
 ```python
-for job in client.iter_all_jobs(limit=100):
+for job in client.iter_all_jobs(count=100):
     process_job(job)
 ```
 

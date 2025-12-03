@@ -35,14 +35,13 @@ def main():
         print("Fetching first page of jobs...")
         print("=" * 60)
 
-        response = client.get_all_jobs(page=1, limit=10)
+        response = client.get_all_jobs(page=1, count=10)
 
         jobs = response.get("data", [])
-        pagination = response.get("pagination", {})
 
-        print(f"Total jobs: {pagination.get('total_records', 'N/A')}")
-        print(f"Total pages: {pagination.get('total_pages', 'N/A')}")
-        print(f"Current page: {pagination.get('current_page', 'N/A')}")
+        print(f"Total jobs: {response.get('total_records', 'N/A')}")
+        print(f"Total pages: {response.get('total_pages', 'N/A')}")
+        print(f"Current page: {response.get('current_page', 'N/A')}")
         print(f"Jobs on this page: {len(jobs)}")
         print()
 
@@ -68,11 +67,11 @@ def main():
 
         response = client.get_all_jobs(
             page=1,
-            limit=10,
+            count=10,
             from_date=thirty_days_ago.strftime("%Y-%m-%d"),
             to_date=today.strftime("%Y-%m-%d"),
             sort="DESC",
-            sort_by="created_at"
+            sort_by="scheduled_start_time"
         )
 
         jobs = response.get("data", [])
@@ -84,13 +83,13 @@ def main():
         print("Iterating through jobs (first 5 for demo)...")
         print("=" * 60)
 
-        count = 0
-        for job in client.iter_all_jobs(limit=5):
-            count += 1
+        job_count = 0
+        for job in client.iter_all_jobs(count=5):
+            job_count += 1
             job_uid = job.get("job_uid", "N/A")
-            print(f"  {count}. Job UID: {job_uid}")
+            print(f"  {job_count}. Job UID: {job_uid}")
 
-            if count >= 5:
+            if job_count >= 5:
                 print("  ... (stopping at 5 for demo)")
                 break
 

@@ -157,15 +157,27 @@ class ZuperClient:
     def get_all_jobs(
         self,
         page: int = 1,
-        limit: int = 100,
+        count: int = 100,
         sort: str = "DESC",
-        sort_by: str = "created_at",
+        sort_by: str = "work_order_number",
+        date_type: str = "scheduled_date",
+        # Common filters
+        priority: Optional[str] = None,
+        customer: Optional[str] = None,
+        category: Optional[str] = None,
+        keyword: Optional[str] = None,
+        job_status: Optional[str] = None,
         from_date: Optional[str] = None,
         to_date: Optional[str] = None,
-        status: Optional[str] = None,
-        customer_uid: Optional[str] = None,
-        user_uid: Optional[str] = None,
-        job_category: Optional[str] = None,
+        assigned_to: Optional[str] = None,
+        assigned_to_team: Optional[str] = None,
+        asset: Optional[str] = None,
+        property_uid: Optional[str] = None,
+        custom_field: Optional[str] = None,
+        job_tags: Optional[str] = None,
+        job_type: Optional[str] = None,
+        is_recurrence: Optional[str] = None,
+        is_deleted: Optional[str] = None,
         **kwargs,
     ) -> Dict[str, Any]:
         """
@@ -173,40 +185,64 @@ class ZuperClient:
 
         Args:
             page: Page number (default: 1)
-            limit: Number of results per page (default: 100, max varies by plan)
+            count: Number of results per page (default: 100, max 1000)
             sort: Sort direction - 'ASC' or 'DESC' (default: 'DESC')
-            sort_by: Field to sort by (default: 'created_at')
-            from_date: Start date filter (ISO 8601 format: 'YYYY-MM-DD')
-            to_date: End date filter (ISO 8601 format: 'YYYY-MM-DD')
-            status: Filter by job status
-            customer_uid: Filter by customer UID
-            user_uid: Filter by assigned user UID
-            job_category: Filter by job category
-            **kwargs: Additional query parameters
+            sort_by: Field to sort by. Allowed: 'work_order_number', 'job_priority',
+                     'scheduled_start_time', 'due_date' (default: 'work_order_number')
+            date_type: Date type for filtering. Allowed: 'scheduled_date', 'created_date',
+                       'current_status_updated_at' (default: 'scheduled_date')
+            priority: Filter by priority - 'URGENT', 'HIGH', 'MEDIUM', 'LOW'
+            customer: Filter by customer UIDs (comma-separated)
+            category: Filter by category UIDs (comma-separated)
+            keyword: Search keyword
+            job_status: Filter by job status
+            from_date: Filter by scheduled from date
+            to_date: Filter by scheduled to date
+            assigned_to: Filter by assigned user UIDs
+            assigned_to_team: Filter by assigned team UIDs
+            asset: Filter by asset UIDs
+            property_uid: Filter by property UIDs
+            custom_field: Filter by custom field
+            job_tags: Filter by job tags
+            job_type: Filter by job type - 'NEW', 'REVISIT'
+            is_recurrence: Filter recurrence jobs
+            is_deleted: Filter deleted jobs (max 90 days)
+            **kwargs: Additional filter parameters (use 'filter.{name}' format)
 
         Returns:
             Dictionary containing jobs data and pagination info
         """
         params = {
             "page": page,
-            "limit": limit,
+            "count": count,
             "sort": sort,
             "sort_by": sort_by,
+            "date_type": date_type,
         }
 
-        # Add optional filters
-        if from_date:
-            params["date"] = from_date
-        if to_date:
-            params["to_date"] = to_date
-        if status:
-            params["status"] = status
-        if customer_uid:
-            params["customer_uid"] = customer_uid
-        if user_uid:
-            params["user_uid"] = user_uid
-        if job_category:
-            params["job_category"] = job_category
+        # Add optional filters with 'filter.' prefix
+        filter_mapping = {
+            "filter.priority": priority,
+            "filter.customer": customer,
+            "filter.category": category,
+            "filter.keyword": keyword,
+            "filter.job_status": job_status,
+            "filter.from_date": from_date,
+            "filter.to_date": to_date,
+            "filter.assigned_to": assigned_to,
+            "filter.assigned_to_team": assigned_to_team,
+            "filter.asset": asset,
+            "filter.property": property_uid,
+            "filter.custom_field": custom_field,
+            "filter.job_tags": job_tags,
+            "filter.job_type": job_type,
+            "filter.is_recurrence": is_recurrence,
+            "filter.is_deleted": is_deleted,
+        }
+
+        for key, value in filter_mapping.items():
+            if value is not None:
+                params[key] = value
 
         # Add any additional parameters
         params.update(kwargs)
@@ -215,9 +251,9 @@ class ZuperClient:
 
     def iter_all_jobs(
         self,
-        limit: int = 100,
+        count: int = 100,
         sort: str = "DESC",
-        sort_by: str = "created_at",
+        sort_by: str = "work_order_number",
         from_date: Optional[str] = None,
         to_date: Optional[str] = None,
         **kwargs,
@@ -228,12 +264,13 @@ class ZuperClient:
         This is a generator that yields individual job records.
 
         Args:
-            limit: Number of results per page (default: 100)
+            count: Number of results per page (default: 100, max 1000)
             sort: Sort direction - 'ASC' or 'DESC' (default: 'DESC')
-            sort_by: Field to sort by (default: 'created_at')
+            sort_by: Field to sort by. Allowed: 'work_order_number', 'job_priority',
+                     'scheduled_start_time', 'due_date'
             from_date: Start date filter (ISO 8601 format)
             to_date: End date filter (ISO 8601 format)
-            **kwargs: Additional query parameters
+            **kwargs: Additional query parameters (see get_all_jobs for all filters)
 
         Yields:
             Individual job dictionaries
@@ -242,7 +279,7 @@ class ZuperClient:
         while True:
             response = self.get_all_jobs(
                 page=page,
-                limit=limit,
+                count=count,
                 sort=sort,
                 sort_by=sort_by,
                 from_date=from_date,
@@ -258,8 +295,7 @@ class ZuperClient:
                 yield job
 
             # Check if there are more pages
-            pagination = response.get("pagination", {})
-            total_pages = pagination.get("total_pages", 1)
+            total_pages = response.get("total_pages", 1)
             if page >= total_pages:
                 break
 

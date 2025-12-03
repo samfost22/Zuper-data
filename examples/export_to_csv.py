@@ -133,7 +133,7 @@ def main():
             writer.writeheader()
 
             job_count = 0
-            for job in client.iter_all_jobs(limit=100):
+            for job in client.iter_all_jobs(count=100):
                 flat_job = flatten_job(job)
                 writer.writerow(flat_job)
                 job_count += 1
