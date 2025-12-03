@@ -1,0 +1,40 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.egg
+
+# Test outputs
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Export files
+*.csv
+*.json
+*.xlsx
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Credentials (never commit!)
+credentials.json
+secrets.json
