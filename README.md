@@ -27,7 +27,7 @@ from zuper_connector import ZuperClient
 client = ZuperClient(api_key="your_api_key_here")
 
 # Get all jobs (first page)
-response = client.get_all_jobs(page=1, limit=10)
+response = client.get_all_jobs(page=1, count=10)
 jobs = response.get("data", [])
 
 for job in jobs:
@@ -191,6 +191,29 @@ client.update_custom_fields(
     ]
 )
 ```
+
+## NetSuite Integration Dashboard
+
+A Streamlit dashboard to identify completed jobs with line items that are missing the "NetSuite Saleorder ID" custom field.
+
+### Running the Dashboard
+
+```bash
+# Set your API key
+export ZUPER_API_KEY="your_api_key_here"
+
+# Optional: Set region if not US
+export ZUPER_BASE_URL="https://eu.zuperpro.com/api"
+
+# Run the dashboard
+streamlit run dashboard/netsuite_dashboard.py
+```
+
+The dashboard shows:
+- Summary metrics (total jobs, flagged jobs, compliance rate)
+- Table of flagged jobs with work order numbers and links
+- CSV export functionality
+- Date range filtering (defaults to year-to-date)
 
 ## Examples
 
