@@ -90,7 +90,15 @@ class ZuperClient:
 
                 # Handle different HTTP status codes
                 if response.status_code == 200:
-                    return response.json()
+                    try:
+                        return response.json()
+                    except (ValueError, requests.exceptions.JSONDecodeError):
+                        raise ZuperAPIError(
+                            f"Invalid JSON response from API. Status: {response.status_code}. "
+                            f"Response: {response.text[:200] if response.text else 'empty'}. "
+                            f"Check your API key and base URL region.",
+                            status_code=200,
+                        )
                 elif response.status_code == 401:
                     raise ZuperAuthError(
                         "Authentication failed. Check your API key.",
