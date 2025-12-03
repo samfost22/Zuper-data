@@ -5,7 +5,18 @@ A Python connector for the Zuper Field Service Management API.
 """
 
 from .client import ZuperClient
-from .exceptions import ZuperAPIError, ZuperAuthError, ZuperRateLimitError
+from .exceptions import (
+    ZuperAPIError,
+    ZuperAuthError,
+    ZuperRateLimitError,
+    ZuperNotFoundError,
+)
 
-__version__ = "0.1.0"
-__all__ = ["ZuperClient", "ZuperAPIError", "ZuperAuthError", "ZuperRateLimitError"]
+__version__ = "1.0.0"
+__all__ = [
+    "ZuperClient",
+    "ZuperAPIError",
+    "ZuperAuthError",
+    "ZuperRateLimitError",
+    "ZuperNotFoundError",
+]

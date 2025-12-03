@@ -14,11 +14,65 @@ A Python connector for the [Zuper](https://www.zuper.co/) Field Service Manageme
 
 ## Installation
 
+### Clone and Install
+
 ```bash
-pip install -r requirements.txt
+# Clone the repository
+git clone https://github.com/samfost22/Zuper-data.git
+cd Zuper-data
+
+# Install the package
+pip install -e .
+
+# Or with dashboard support
+pip install -e ".[dashboard]"
 ```
 
-## Quick Start
+### Set Your API Key
+
+```bash
+export ZUPER_API_KEY="your_api_key_here"
+
+# Optional: Set region if not US
+export ZUPER_BASE_URL="https://eu.zuperpro.com/api"
+```
+
+## Command Line Usage
+
+After installation, use the `zuper` command:
+
+```bash
+# Test your API connection
+zuper test
+
+# List recent jobs
+zuper jobs
+zuper jobs --count 50
+zuper jobs --status COMPLETED
+
+# Get job details
+zuper job <job_uid>
+
+# List customers
+zuper customers
+
+# Export jobs to CSV
+zuper export output.csv
+zuper export output.csv --from 2024-01-01 --to 2024-12-31
+```
+
+### Using Make
+
+```bash
+make help          # Show all available commands
+make install       # Install package
+make test          # Test API connection
+make jobs          # List jobs
+make dashboard     # Run NetSuite dashboard
+make export        # Export jobs to CSV
+```
+
+## Quick Start (Python)
 
 ```python
 from zuper_connector import ZuperClient
