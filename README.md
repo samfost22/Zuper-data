@@ -8,6 +8,7 @@ A Python connector for the [Zuper](https://www.zuper.co/) Field Service Manageme
 - Get individual job details
 - Get recurring jobs
 - Get customers and users
+- **Custom fields support** - read and update custom fields on jobs, customers, and assets
 - Automatic retry with exponential backoff
 - Export jobs to CSV
 
@@ -126,6 +127,61 @@ Fetch customers or field technicians.
 ```python
 customers = client.get_customers(page=1, limit=100)
 users = client.get_users(page=1, limit=100)
+```
+
+## Custom Fields
+
+Zuper supports custom fields on jobs, customers, properties, and organizations.
+
+### Get Custom Field Definitions
+
+```python
+# Get custom field definitions for jobs
+job_fields = client.get_custom_fields(module="JOB")
+
+# Get custom field definitions for customers
+customer_fields = client.get_custom_fields(module="CUSTOMER")
+```
+
+### Get Custom Field Values
+
+```python
+# Get custom fields for a specific job
+custom_fields = client.get_job_custom_fields("job_uid_here")
+
+# Get custom fields for a specific customer
+custom_fields = client.get_customer_custom_fields("customer_uid_here")
+```
+
+### Update Custom Fields
+
+```python
+# Update custom fields on a job
+client.update_job_custom_fields(
+    job_uid="abc123",
+    custom_fields=[
+        {"label": "Equipment Type", "value": "Tractor"},
+        {"label": "Serial Number", "value": "SN-12345"},
+    ]
+)
+
+# Update custom fields on a customer
+client.update_customer_custom_fields(
+    customer_uid="abc123",
+    custom_fields=[
+        {"label": "Account Manager", "value": "John Doe"},
+        {"label": "Contract Type", "value": "Premium"},
+    ]
+)
+
+# Generic method for any module type
+client.update_custom_fields(
+    module_name="JOB",  # JOB, CUSTOMER, PROPERTY, ORGANIZATION
+    module_uid="abc123",
+    custom_fields=[
+        {"label": "Field Name", "value": "Field Value"},
+    ]
+)
 ```
 
 ## Examples

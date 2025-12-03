@@ -361,6 +361,242 @@ class ZuperClient:
 
         return self._request("GET", "/users", params=params)
 
+    # -------------------------------------------------------------------------
+    # Custom Fields Methods
+    # -------------------------------------------------------------------------
+
+    def get_custom_fields(
+        self,
+        module: str = "JOB",
+        page: int = 1,
+        limit: int = 100,
+        **kwargs,
+    ) -> Dict[str, Any]:
+        """
+        Get custom field definitions for a module.
+
+        Args:
+            module: The module type - 'JOB', 'CUSTOMER', 'USER', 'ASSET', etc.
+                    (default: 'JOB')
+            page: Page number (default: 1)
+            limit: Number of results per page (default: 100)
+            **kwargs: Additional query parameters
+
+        Returns:
+            Dictionary containing custom field definitions
+        """
+        params = {
+            "page": page,
+            "limit": limit,
+            "module": module,
+        }
+        params.update(kwargs)
+
+        return self._request("GET", "/custom_fields", params=params)
+
+    def get_job_custom_fields(self, job_uid: str) -> Dict[str, Any]:
+        """
+        Get custom field values for a specific job.
+
+        Args:
+            job_uid: The unique identifier of the job
+
+        Returns:
+            Dictionary containing the job's custom field values
+        """
+        job_details = self.get_job_details(job_uid)
+        return job_details.get("data", {}).get("custom_fields", {})
+
+    def update_custom_fields(
+        self,
+        module_name: str,
+        module_uid: str,
+        custom_fields: List[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        """
+        Update custom field values for any module (job, customer, property, organization).
+
+        Args:
+            module_name: The module type - 'JOB', 'CUSTOMER', 'PROPERTY', 'ORGANIZATION'
+            module_uid: The unique identifier of the entity
+            custom_fields: List of custom field updates, each containing:
+                - label (required): The custom field label/name
+                - value (required): The new value for the field
+                - type (optional): Field type
+                - ref_uid (optional): Reference UID
+                - group_name (optional): Group name for the field
+                - group_uid (optional): Group UID
+
+        Returns:
+            Dictionary containing the API response
+
+        Example:
+            client.update_custom_fields(
+                module_name="JOB",
+                module_uid="abc123",
+                custom_fields=[
+                    {"label": "Equipment Type", "value": "Tractor"},
+                    {"label": "Serial Number", "value": "SN-12345"},
+                ]
+            )
+        """
+        payload = {
+            "module_name": module_name,
+            "module_uid": module_uid,
+            "custom_fields": custom_fields,
+        }
+        return self._request("PATCH", "/custom_fields", json_data=payload)
+
+    def update_job_custom_fields(
+        self,
+        job_uid: str,
+        custom_fields: List[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        """
+        Update custom field values for a job.
+
+        Args:
+            job_uid: The unique identifier of the job
+            custom_fields: List of custom field updates, each containing:
+                - label (required): The custom field label/name
+                - value (required): The new value for the field
+                - type (optional): Field type
+                - group_name (optional): Group name for the field
+
+        Returns:
+            Dictionary containing the API response
+
+        Example:
+            client.update_job_custom_fields(
+                job_uid="abc123",
+                custom_fields=[
+                    {"label": "Equipment Type", "value": "Tractor"},
+                    {"label": "Serial Number", "value": "SN-12345"},
+                ]
+            )
+        """
+        return self.update_custom_fields("JOB", job_uid, custom_fields)
+
+    def get_customer_custom_fields(self, customer_uid: str) -> Dict[str, Any]:
+        """
+        Get custom field values for a specific customer.
+
+        Args:
+            customer_uid: The unique identifier of the customer
+
+        Returns:
+            Dictionary containing the customer's custom field values
+        """
+        customer_details = self._request("GET", f"/customers/{customer_uid}")
+        return customer_details.get("data", {}).get("custom_fields", {})
+
+    def update_customer_custom_fields(
+        self,
+        customer_uid: str,
+        custom_fields: List[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        """
+        Update custom field values for a customer.
+
+        Args:
+            customer_uid: The unique identifier of the customer
+            custom_fields: List of custom field updates, each containing:
+                - label (required): The custom field label/name
+                - value (required): The new value for the field
+
+        Returns:
+            Dictionary containing the API response
+
+        Example:
+            client.update_customer_custom_fields(
+                customer_uid="abc123",
+                custom_fields=[
+                    {"label": "Account Manager", "value": "John Doe"},
+                    {"label": "Contract Type", "value": "Premium"},
+                ]
+            )
+        """
+        return self.update_custom_fields("CUSTOMER", customer_uid, custom_fields)
+
+    def update_property_custom_fields(
+        self,
+        property_uid: str,
+        custom_fields: List[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        """
+        Update custom field values for a property.
+
+        Args:
+            property_uid: The unique identifier of the property
+            custom_fields: List of custom field updates, each containing:
+                - label (required): The custom field label/name
+                - value (required): The new value for the field
+
+        Returns:
+            Dictionary containing the API response
+        """
+        return self.update_custom_fields("PROPERTY", property_uid, custom_fields)
+
+    def update_organization_custom_fields(
+        self,
+        organization_uid: str,
+        custom_fields: List[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        """
+        Update custom field values for an organization.
+
+        Args:
+            organization_uid: The unique identifier of the organization
+            custom_fields: List of custom field updates, each containing:
+                - label (required): The custom field label/name
+                - value (required): The new value for the field
+
+        Returns:
+            Dictionary containing the API response
+        """
+        return self.update_custom_fields("ORGANIZATION", organization_uid, custom_fields)
+
+    def get_asset_custom_fields(self, asset_uid: str) -> Dict[str, Any]:
+        """
+        Get custom field values for a specific asset.
+
+        Args:
+            asset_uid: The unique identifier of the asset
+
+        Returns:
+            Dictionary containing the asset's custom field values
+        """
+        asset_details = self._request("GET", f"/assets/{asset_uid}")
+        return asset_details.get("data", {}).get("custom_fields", {})
+
+    def update_asset_custom_fields(
+        self,
+        asset_uid: str,
+        custom_fields: List[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        """
+        Update custom field values for an asset.
+
+        Note: Assets may use 'PROPERTY' module type in Zuper's API.
+        If this doesn't work, try update_property_custom_fields() instead.
+
+        Args:
+            asset_uid: The unique identifier of the asset
+            custom_fields: List of custom field updates, each containing:
+                - label (required): The custom field label/name
+                - value (required): The new value for the field
+
+        Returns:
+            Dictionary containing the API response
+        """
+        # Try ASSET first, but Zuper may use PROPERTY for assets
+        payload = {
+            "module_name": "ASSET",
+            "module_uid": asset_uid,
+            "custom_fields": custom_fields,
+        }
+        return self._request("PATCH", "/custom_fields", json_data=payload)
+
     def close(self):
         """Close the session."""
         self.session.close()
