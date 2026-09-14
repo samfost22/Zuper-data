@@ -45,6 +45,16 @@ def test_extract_job_uid_from_nested_data():
 
 def test_event_allowlist_default_and_custom(monkeypatch):
     monkeypatch.delenv("ZUPER_EVENT_ALLOWLIST", raising=False)
+    assert filters.event_allowlist() == [
+        "job.status_changed",
+        "job.updated",
+        "job.update",
+        "job.update_status",
+        "job.status_update",
+        "job.update_schedule",
+    ]
+    assert filters.event_is_allowed("job.status_changed")
+    assert filters.event_is_allowed("job.updated")
     assert filters.event_is_allowed("job.update")
     assert filters.event_is_allowed("JOB.UPDATE_STATUS")
     assert filters.event_is_allowed("job.update_schedule")
@@ -52,6 +62,17 @@ def test_event_allowlist_default_and_custom(monkeypatch):
     assert filters.event_is_allowed("job.create") is False
     assert filters.event_is_allowed("job.update", env_value="custom.event") is False
     assert filters.event_is_allowed("custom.event", env_value="custom.event")
+
+
+def test_event_is_allowed_when_event_missing_or_null(monkeypatch):
+    """Missing/null event must not skip on allowlist; GET+WOP still applies."""
+    monkeypatch.delenv("ZUPER_EVENT_ALLOWLIST", raising=False)
+    assert filters.event_is_allowed("")
+    assert filters.event_is_allowed(None)
+    assert filters.event_is_allowed("   ")
+    assert filters.extract_event_name({"event": None, "job_uid": "abc"}) == ""
+    assert filters.extract_event_name({"job_uid": "abc"}) == ""
+    assert filters.event_is_allowed(filters.extract_event_name({"event": None}))
 
 
 def test_is_waiting_on_parts_case_insensitive():

@@ -7,7 +7,7 @@ It never writes to Zuper (no PATCH/PUT/POST). It never talks to Google Calendar.
 ## Flow
 
 1. Verify webhook secret (`x-webhook-secret` or `secret-key` / `Secret-Key`). All whitespace is stripped; `ZUPER_WEBHOOK_SECRET` may be comma-separated. Bad/missing secret → **401**.
-2. Event allowlist via `ZUPER_EVENT_ALLOWLIST` (default: `job.update`, `job.update_status`, `job.update_schedule`, `job.status_update`). Non-matching events → **200** `skipped: event_not_allowed`.
+2. Event allowlist via `ZUPER_EVENT_ALLOWLIST` (default: `job.status_changed`, `job.updated`, `job.update`, `job.update_status`, `job.status_update`, `job.update_schedule`). Present events that are not listed → **200** `skipped: event_not_allowed`. **Missing/null `event` is not skipped on the allowlist** — the receiver still GETs the job and applies WOP/module filters. Zuper’s webhook UI uses human labels (Module = Jobs, Event like “Update Job Status” / “Job Status Changed”); `payload.event` may be the code form above. Keep the allowlist aligned with whatever string actually arrives — this receiver does not map UI labels. WOP filtering remains on **current job status after GET**, not on the event name.
 3. Require `job_uid` (payload often nests under `data`). Missing → **400**.
 4. `GET {ZUPER_BASE_URL}/api/jobs/{job_uid}` with `x-api-key`. Unwrap `data`.
 5. Skip **200** `not_wop` unless **current** status is *Waiting on Parts* (case-insensitive). Live Get Job Details puts that on `current_job_status.status_name` (and similar nested fields). `job_status` is a **history array** and is not treated as current status.
@@ -78,7 +78,7 @@ Working directory must be `zuper-wop-notify/` so `webhook_receiver:app` imports 
 
 ## Zuper webhook setup
 
-1. Confirm the **exact event name** fired when a job moves to *Waiting on Parts* in the Zuper UI (Settings → Developer Hub / Webhooks). The default allowlist covers common `job.update*` names; add the real name to `ZUPER_EVENT_ALLOWLIST` if it differs.
+1. In the Zuper UI (Settings → Developer Hub / Webhooks), subscribe under **Module = Jobs** to events such as “Update Job Status” / “Job Status Changed” (human labels). `payload.event` may use the code form (`job.status_changed`, `job.updated`, `job.update`, `job.update_status`, `job.status_update`, `job.update_schedule`). Put the **payload string** in `ZUPER_EVENT_ALLOWLIST` if it differs — the receiver does not map UI labels. WOP matching still uses current job status after GET.
 2. Create a webhook pointing at `https://<your-host>/zuper-webhook` (HTTPS).
 3. Set the webhook secret to the same value as `ZUPER_WEBHOOK_SECRET`. This app accepts `x-webhook-secret` or `secret-key` / `Secret-Key`.
 4. Use an API key with **read** access to jobs. Put it in `ZUPER_API_KEY`. Default base URL is `https://us-east-1.zuperpro.com`.

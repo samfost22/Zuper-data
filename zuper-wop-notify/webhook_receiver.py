@@ -57,6 +57,8 @@ def _handle_webhook(dry_run: bool) -> tuple[Any, int]:
         logger.error("Rejected webhook: body is not a JSON object")
         return jsonify({"ok": False, "error": "invalid_json"}), 400
 
+    # Skip only when event is present AND not allowlisted.
+    # Missing/null event still GET + WOP-filters (do not skip on allowlist alone).
     event_name = filters.extract_event_name(payload)
     if not filters.event_is_allowed(event_name):
         logger.info("Skipped webhook: event_not_allowed event=%s", event_name)

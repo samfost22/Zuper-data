@@ -13,10 +13,12 @@ from typing import Any, Iterable
 DEFAULT_WOP_STATUS = "Waiting on Parts"
 DEFAULT_MODULE_SKU_PREFIXES = ("0000675",)
 DEFAULT_EVENT_ALLOWLIST = (
+    "job.status_changed",
+    "job.updated",
     "job.update",
     "job.update_status",
-    "job.update_schedule",
     "job.status_update",
+    "job.update_schedule",
 )
 FRESHNESS_NOTE = "live Zuper API pull at notify time; NS→Zuper lag unknown"
 SOURCE_NAME = "zuper-wop-notify"
@@ -107,9 +109,15 @@ def extract_event_name(payload: dict[str, Any] | None) -> str:
     return ""
 
 
-def event_is_allowed(event_name: str, env_value: str | None = None) -> bool:
-    if not event_name:
-        return False
+def event_is_allowed(event_name: str | None, env_value: str | None = None) -> bool:
+    """Skip only when an event name is present and not on the allowlist.
+
+    Missing/null/blank events are allowed through so GET + WOP status
+    filtering can still run. Zuper's UI uses human labels; ``payload.event``
+    may be a code form — we accept whatever is in the allowlist as-is.
+    """
+    if event_name is None or str(event_name).strip() == "":
+        return True
     allowed = event_allowlist(env_value)
     return event_name.strip().casefold() in {item.casefold() for item in allowed}
 
