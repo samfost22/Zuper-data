@@ -98,7 +98,7 @@ def _handle_webhook(dry_run: bool) -> tuple[Any, int]:
         logger.info(
             "Skipped webhook: not_wop job_uid=%s status=%s",
             job_uid,
-            job.get("job_status"),
+            filters._status_text(job),
         )
         return (
             jsonify(

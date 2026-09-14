@@ -63,6 +63,34 @@ def test_is_waiting_on_parts_case_insensitive():
     assert filters.is_waiting_on_parts({}) is False
 
 
+def test_is_waiting_on_parts_uses_current_job_status_not_history_array():
+    """Live Get Job Details: current status is nested; job_status is history."""
+    job = {
+        "current_job_status": {"status_name": "Waiting on Parts"},
+        "job_status": [
+            {"status_name": "New Ticket"},
+            {"status_name": "Scheduled"},
+        ],
+    }
+    assert filters.is_waiting_on_parts(job)
+    assert filters._status_text(job) == "Waiting on Parts"
+    assert filters.is_waiting_on_parts(
+        {"current_job_status": {"status_name": "waiting on parts"}, "job_status": []}
+    )
+
+
+def test_is_waiting_on_parts_ignores_wop_only_in_job_status_history():
+    job = {
+        "current_job_status": {"status_name": "New Ticket"},
+        "job_status": [
+            {"status_name": "New Ticket"},
+            {"status_name": "Waiting on Parts"},
+        ],
+    }
+    assert filters.is_waiting_on_parts(job) is False
+    assert filters._status_text({"job_status": [{"status_name": "Waiting on Parts"}]}) == ""
+
+
 def test_extract_module_skus_matches_prefix_only_found_items():
     job = {
         "products": [
@@ -83,6 +111,32 @@ def test_extract_module_skus_does_not_invent_qty_or_skus():
     assert found == [{"sku": "0000675", "qty": None}]
     assert filters.extract_module_skus({"products": []}, prefixes=["0000675"]) == []
     assert filters.extract_module_skus({}, prefixes=["0000675"]) == []
+
+
+def test_extract_module_skus_from_product_id_and_nested_product():
+    """Carbon modules use product_id, not only sku / item_sku."""
+    by_top = filters.extract_module_skus(
+        {"products": [{"product_id": "0000675", "qty": 1}]},
+        prefixes=["0000675"],
+    )
+    assert by_top == [{"sku": "0000675", "qty": 1}]
+
+    by_nested = filters.extract_module_skus(
+        {"products": [{"product": {"product_id": "0000675"}, "quantity": 2}]},
+        prefixes=["0000675"],
+    )
+    assert by_nested == [{"sku": "0000675", "qty": 2}]
+
+    mixed = filters.extract_module_skus(
+        {
+            "products": [
+                {"product_id": "0000675-RW", "qty": 1},
+                {"product": {"product_id": "9999999"}, "qty": 9},
+            ]
+        },
+        prefixes=["0000675"],
+    )
+    assert mixed == [{"sku": "0000675-RW", "qty": 1}]
 
 
 def test_extract_gps_from_zuper_geo_cordinates_typo():
@@ -138,3 +192,23 @@ def test_build_notify_payload_shape():
         "module_skus_found",
         "freshness_note",
     }
+
+
+def test_build_notify_payload_falls_back_to_work_order_number():
+    job = {
+        "job_uid": "uid-2",
+        "work_order_number": "WO-7788",
+        "current_job_status": {"status_name": "Waiting on Parts"},
+        "job_status": [{"status_name": "New Ticket"}],
+        "products": [{"product_id": "0000675", "qty": 1}],
+    }
+    payload = filters.build_notify_payload(job, zuper_event="job.update")
+    assert payload["job_number"] == "WO-7788"
+    assert payload["status"] == "Waiting on Parts"
+
+    both = {
+        "job_uid": "uid-3",
+        "job_number": "12345",
+        "work_order_number": "WO-7788",
+    }
+    assert filters.build_notify_payload(both, zuper_event="job.update")["job_number"] == "12345"
