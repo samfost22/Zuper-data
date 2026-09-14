@@ -140,16 +140,55 @@ def unwrap_data(payload: Any) -> dict[str, Any]:
     return {}
 
 
+# Live Get Job Details: current status is nested; job_status is a history array.
+_CURRENT_STATUS_KEYS = (
+    "current_job_status",
+    "current_status",
+    "job_current_status",
+)
+_STATUS_NAME_KEYS = ("status_name", "name", "job_status", "label", "value")
+
+
+def _status_from_value(value: Any) -> str:
+    """Extract a status name from a scalar or nested dict. History lists are ignored."""
+    if isinstance(value, dict):
+        for key in _STATUS_NAME_KEYS:
+            nested = value.get(key)
+            if nested is None or nested == "" or isinstance(nested, (dict, list)):
+                continue
+            text = str(nested).strip()
+            if text:
+                return text
+        for key in ("status", "current_job_status", "current_status"):
+            nested = value.get(key)
+            if isinstance(nested, dict):
+                text = _status_from_value(nested)
+                if text:
+                    return text
+        return ""
+    if isinstance(value, list):
+        return ""
+    if value is None:
+        return ""
+    return str(value).strip()
+
+
 def _status_text(job: dict[str, Any]) -> str:
-    status = job.get("job_status", job.get("status"))
-    if isinstance(status, dict):
-        for key in ("status_name", "name", "job_status", "label", "value"):
-            if status.get(key):
-                return str(status[key]).strip()
-        return ""
-    if status is None:
-        return ""
-    return str(status).strip()
+    """Current job status from live Get Job Details (not the job_status history array)."""
+    for key in _CURRENT_STATUS_KEYS:
+        if key not in job:
+            continue
+        text = _status_from_value(job.get(key))
+        if text:
+            return text
+    for key in ("job_status", "status"):
+        value = job.get(key)
+        if isinstance(value, list):
+            continue
+        text = _status_from_value(value)
+        if text:
+            return text
+    return ""
 
 
 def wop_status_name() -> str:
@@ -208,8 +247,10 @@ def _sku_from_item(item: Any) -> str | None:
         item.get("item_sku"),
         item.get("part_sku"),
         item.get("product_code"),
+        item.get("product_id"),
         nested_product.get("product_sku"),
         nested_product.get("sku"),
+        nested_product.get("product_id"),
         nested_part.get("sku"),
         nested_part.get("part_sku"),
     ):
@@ -345,6 +386,18 @@ def _is_frp_child(job: dict[str, Any], parent_job_number: str | None) -> bool:
     return bool(job.get("is_frp_child"))
 
 
+def _job_number(job: dict[str, Any]) -> str | None:
+    """Prefer job_number; fall back to work_order_number (live Get Job Details)."""
+    for key in ("job_number", "work_order_number"):
+        value = job.get(key)
+        if value is None or value == "":
+            continue
+        text = str(value).strip()
+        if text:
+            return text
+    return None
+
+
 def _job_title(job: dict[str, Any]) -> str | None:
     for key in ("job_title", "title", "work_order_title", "job_name"):
         if job.get(key):
@@ -388,7 +441,7 @@ def build_notify_payload(
         "zuper_event": zuper_event,
         "received_at": received_at or utc_now_iso(),
         "job_uid": str(uid),
-        "job_number": str(job["job_number"]) if job.get("job_number") is not None else None,
+        "job_number": _job_number(job),
         "title": _job_title(job),
         "status": _status_text(job) or wop_status_name(),
         "job_priority": _job_priority(job),

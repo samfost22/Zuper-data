@@ -84,7 +84,10 @@ def unwrap_job_payload(body: Any) -> dict[str, Any]:
     data = body.get("data")
     if isinstance(data, dict):
         return data
-    if "job_uid" in body or "job_number" in body or "job_status" in body:
+    if any(
+        key in body
+        for key in ("job_uid", "job_number", "job_status", "current_job_status", "work_order_number")
+    ):
         return body
     raise ZuperAPIError("Zuper job payload missing data object and job fields")
 

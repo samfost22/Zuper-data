@@ -10,8 +10,8 @@ It never writes to Zuper (no PATCH/PUT/POST). It never talks to Google Calendar.
 2. Event allowlist via `ZUPER_EVENT_ALLOWLIST` (default: `job.update`, `job.update_status`, `job.update_schedule`, `job.status_update`). Non-matching events → **200** `skipped: event_not_allowed`.
 3. Require `job_uid` (payload often nests under `data`). Missing → **400**.
 4. `GET {ZUPER_BASE_URL}/api/jobs/{job_uid}` with `x-api-key`. Unwrap `data`.
-5. Skip **200** `not_wop` unless status is *Waiting on Parts* (case-insensitive).
-6. Skip **200** `not_module` unless a line-item SKU matches `MODULE_SKU_PREFIXES` (default `0000675`).
+5. Skip **200** `not_wop` unless **current** status is *Waiting on Parts* (case-insensitive). Live Get Job Details puts that on `current_job_status.status_name` (and similar nested fields). `job_status` is a **history array** and is not treated as current status.
+6. Skip **200** `not_module` unless a line-item identifier matches `MODULE_SKU_PREFIXES` (default `0000675`). Carbon modules often use `product_id` / `product.product_id` rather than `sku` — both are accepted.
 7. On match: build the notify payload and POST it to `SHOP_MANAGER_WEBHOOK_URL` and, if set, `PARTS_BOT_WEBHOOK_URL`. Fan-out failures are logged and returned in the JSON body but the HTTP status back to Zuper is still **200** (avoids retry storms).
 
 `POST /dry-run` runs the same pipeline and returns the payload **without** fan-out.
@@ -38,7 +38,7 @@ It never writes to Zuper (no PATCH/PUT/POST). It never talks to Google Calendar.
 }
 ```
 
-GPS is taken from the job when present (`customer_address.geo_cordinates` and similar). `qty` is copied from the line item; if Zuper omitted quantity it is `null` rather than guessed.
+`job_number` prefers Zuper `job_number` and falls back to `work_order_number`. GPS is taken from the job when present (`customer_address.geo_cordinates` and similar). `qty` is copied from the line item; if Zuper omitted quantity it is `null` rather than guessed.
 
 ## Local run
 
