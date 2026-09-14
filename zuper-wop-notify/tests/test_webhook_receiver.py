@@ -39,6 +39,13 @@ def test_webhook_unauthorized_without_secret(monkeypatch):
 
 def test_webhook_skips_non_allowlisted_event(monkeypatch):
     client = _client(monkeypatch)
+    called = {"get": 0}
+
+    def fake_get(_job_uid):
+        called["get"] += 1
+        return {}
+
+    monkeypatch.setattr("webhook_receiver.get_job_detail", fake_get)
     resp = client.post(
         "/zuper-webhook",
         headers=_headers(),
@@ -48,6 +55,65 @@ def test_webhook_skips_non_allowlisted_event(monkeypatch):
     body = resp.get_json()
     assert body["skipped"] is True
     assert body["reason"] == "event_not_allowed"
+    assert called["get"] == 0
+
+
+def test_webhook_missing_or_null_event_still_fetches_and_wop_filters(monkeypatch):
+    """Regression: blank event must not skip on allowlist; still GET + WOP."""
+    client = _client(monkeypatch)
+    called = {"get": 0}
+
+    def fake_get(job_uid):
+        called["get"] += 1
+        return {
+            "job_uid": job_uid,
+            "job_status": "Waiting on Parts",
+            "products": [{"sku": "0000675", "qty": 1}],
+        }
+
+    monkeypatch.setattr("webhook_receiver.get_job_detail", fake_get)
+    monkeypatch.setattr(
+        fanout_mod,
+        "fanout",
+        lambda payload: {"shop_manager": {"ok": True}, "parts_bot": {"ok": True}},
+    )
+
+    for payload in (
+        {"event": None, "data": {"job_uid": "abc"}},
+        {"job_uid": "abc"},
+    ):
+        called["get"] = 0
+        resp = client.post("/zuper-webhook", headers=_headers(), json=payload)
+        assert resp.status_code == 200
+        body = resp.get_json()
+        assert body.get("reason") != "event_not_allowed"
+        assert called["get"] == 1
+        assert body["notified"] is True
+
+
+def test_webhook_accepts_job_status_changed_event(monkeypatch):
+    client = _client(monkeypatch)
+
+    def fake_get(job_uid):
+        return {
+            "job_uid": job_uid,
+            "job_status": "Waiting on Parts",
+            "products": [{"sku": "0000675", "qty": 1}],
+        }
+
+    monkeypatch.setattr("webhook_receiver.get_job_detail", fake_get)
+    monkeypatch.setattr(
+        fanout_mod,
+        "fanout",
+        lambda payload: {"shop_manager": {"ok": True}, "parts_bot": {"ok": True}},
+    )
+    resp = client.post(
+        "/zuper-webhook",
+        headers=_headers(),
+        json={"event": "job.status_changed", "data": {"job_uid": "abc"}},
+    )
+    assert resp.status_code == 200
+    assert resp.get_json()["notified"] is True
 
 
 def test_webhook_missing_job_uid_fails_loud(monkeypatch):
