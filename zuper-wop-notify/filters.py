@@ -14,11 +14,6 @@ DEFAULT_WOP_STATUS = "Waiting on Parts"
 DEFAULT_MODULE_SKU_PREFIXES = ("0000675",)
 DEFAULT_EVENT_ALLOWLIST = (
     "job.status_changed",
-    "job.updated",
-    "job.update",
-    "job.update_status",
-    "job.status_update",
-    "job.update_schedule",
 )
 FRESHNESS_NOTE = "live Zuper API pull at notify time; NS→Zuper lag unknown"
 SOURCE_NAME = "zuper-wop-notify"

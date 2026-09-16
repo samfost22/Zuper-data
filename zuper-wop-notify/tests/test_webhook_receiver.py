@@ -33,7 +33,7 @@ def test_health():
 
 def test_webhook_unauthorized_without_secret(monkeypatch):
     client = _client(monkeypatch)
-    resp = client.post("/zuper-webhook", json={"event": "job.update", "job_uid": "x"})
+    resp = client.post("/zuper-webhook", json={"event": "job.status_changed", "job_uid": "x"})
     assert resp.status_code == 401
 
 
@@ -49,7 +49,7 @@ def test_webhook_skips_non_allowlisted_event(monkeypatch):
     resp = client.post(
         "/zuper-webhook",
         headers=_headers(),
-        json={"event": "job.create", "data": {"job_uid": "abc"}},
+        json={"event": "job.created", "data": {"job_uid": "abc"}},
     )
     assert resp.status_code == 200
     body = resp.get_json()
@@ -121,7 +121,7 @@ def test_webhook_missing_job_uid_fails_loud(monkeypatch):
     resp = client.post(
         "/zuper-webhook",
         headers=_headers(),
-        json={"event": "job.update"},
+        json={"event": "job.status_changed"},
     )
     assert resp.status_code == 400
     assert resp.get_json()["error"] == "missing_job_uid"
@@ -157,7 +157,7 @@ def test_webhook_notifies_live_get_job_details_shape(monkeypatch):
     resp = client.post(
         "/zuper-webhook",
         headers=_headers(),
-        json={"event": "job.update_status", "data": {"job_uid": "abc"}},
+        json={"event": "job.status_changed", "data": {"job_uid": "abc"}},
     )
     assert resp.status_code == 200
     body = resp.get_json()
@@ -187,7 +187,7 @@ def test_webhook_notifies_nested_product_id_module(monkeypatch):
     resp = client.post(
         "/zuper-webhook",
         headers=_headers(),
-        json={"event": "job.update", "job_uid": "abc"},
+        json={"event": "job.status_changed", "job_uid": "abc"},
     )
     assert resp.status_code == 200
     body = resp.get_json()
@@ -205,7 +205,7 @@ def test_webhook_skips_not_wop(monkeypatch):
     resp = client.post(
         "/zuper-webhook",
         headers=_headers(),
-        json={"event": "job.update_status", "data": {"job_uid": "abc"}},
+        json={"event": "job.status_changed", "data": {"job_uid": "abc"}},
     )
     assert resp.status_code == 200
     assert resp.get_json()["reason"] == "not_wop"
@@ -221,7 +221,7 @@ def test_webhook_skips_not_module(monkeypatch):
     resp = client.post(
         "/zuper-webhook",
         headers=_headers(),
-        json={"event": "job.update", "job_uid": "abc"},
+        json={"event": "job.status_changed", "job_uid": "abc"},
     )
     assert resp.status_code == 200
     assert resp.get_json()["reason"] == "not_module"
@@ -249,7 +249,7 @@ def test_dry_run_returns_payload_without_fanout(monkeypatch):
     resp = client.post(
         "/dry-run",
         headers=_headers(),
-        json={"event": "job.update", "job_uid": "abc"},
+        json={"event": "job.status_changed", "job_uid": "abc"},
     )
     assert resp.status_code == 200
     body = resp.get_json()
@@ -282,7 +282,7 @@ def test_match_fans_out_and_returns_200_even_if_fanout_fails(monkeypatch):
     resp = client.post(
         "/zuper-webhook",
         headers=_headers(),
-        json={"event": "job.update", "job_uid": "abc"},
+        json={"event": "job.status_changed", "job_uid": "abc"},
     )
     assert resp.status_code == 200
     body = resp.get_json()
@@ -300,7 +300,7 @@ def test_zuper_get_failure_is_loud(monkeypatch):
     resp = client.post(
         "/zuper-webhook",
         headers=_headers(),
-        json={"event": "job.update", "job_uid": "abc"},
+        json={"event": "job.status_changed", "job_uid": "abc"},
     )
     assert resp.status_code == 502
     assert resp.get_json()["error"] == "zuper_get_failed"

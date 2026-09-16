@@ -45,23 +45,15 @@ def test_extract_job_uid_from_nested_data():
 
 def test_event_allowlist_default_and_custom(monkeypatch):
     monkeypatch.delenv("ZUPER_EVENT_ALLOWLIST", raising=False)
-    assert filters.event_allowlist() == [
-        "job.status_changed",
-        "job.updated",
-        "job.update",
-        "job.update_status",
-        "job.status_update",
-        "job.update_schedule",
-    ]
+    assert filters.event_allowlist() == ["job.status_changed"]
     assert filters.event_is_allowed("job.status_changed")
-    assert filters.event_is_allowed("job.updated")
-    assert filters.event_is_allowed("job.update")
-    assert filters.event_is_allowed("JOB.UPDATE_STATUS")
-    assert filters.event_is_allowed("job.update_schedule")
-    assert filters.event_is_allowed("job.status_update")
+    assert filters.event_is_allowed("job.updated") is False
     assert filters.event_is_allowed("job.create") is False
     assert filters.event_is_allowed("job.update", env_value="custom.event") is False
     assert filters.event_is_allowed("custom.event", env_value="custom.event")
+    assert filters.event_is_allowed(
+        "job.created", env_value="job.status_changed,job.updated,job.created"
+    )
 
 
 def test_event_is_allowed_when_event_missing_or_null(monkeypatch):
@@ -180,9 +172,9 @@ def test_build_notify_payload_shape():
         "parent_job": {"job_number": "999"},
         "products": [{"sku": "0000675", "qty": 1}],
     }
-    payload = filters.build_notify_payload(job, zuper_event="job.update_status")
+    payload = filters.build_notify_payload(job, zuper_event="job.status_changed")
     assert payload["source"] == "zuper-wop-notify"
-    assert payload["zuper_event"] == "job.update_status"
+    assert payload["zuper_event"] == "job.status_changed"
     assert payload["received_at"].endswith("Z")
     assert payload["job_uid"] == "uid-1"
     assert payload["job_number"] == "12345"
@@ -223,7 +215,7 @@ def test_build_notify_payload_falls_back_to_work_order_number():
         "job_status": [{"status_name": "New Ticket"}],
         "products": [{"product_id": "0000675", "qty": 1}],
     }
-    payload = filters.build_notify_payload(job, zuper_event="job.update")
+    payload = filters.build_notify_payload(job, zuper_event="job.status_changed")
     assert payload["job_number"] == "WO-7788"
     assert payload["status"] == "Waiting on Parts"
 
@@ -232,4 +224,4 @@ def test_build_notify_payload_falls_back_to_work_order_number():
         "job_number": "12345",
         "work_order_number": "WO-7788",
     }
-    assert filters.build_notify_payload(both, zuper_event="job.update")["job_number"] == "12345"
+    assert filters.build_notify_payload(both, zuper_event="job.status_changed")["job_number"] == "12345"
