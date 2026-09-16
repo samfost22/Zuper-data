@@ -76,6 +76,12 @@ Example systemd unit `ExecStart`:
 
 Working directory must be `zuper-wop-notify/` so `webhook_receiver:app` imports `filters`, `fanout`, and `zuper_api`.
 
+## Deploy (Vercel HTTPS preview/production)
+
+This folder also includes a Vercel Python entrypoint at `api/index.py` and `vercel.json` so the same Flask app can run behind a Vercel HTTPS URL. Configure the Vercel project root directory as `zuper-wop-notify/`, then set the env vars from `.env.example`.
+
+`GET /health`, `POST /dry-run`, and `POST /zuper-webhook` are the same routes as the gunicorn deployment.
+
 ## Deploy checklist
 
 1. Deploy this folder behind an HTTPS host.
