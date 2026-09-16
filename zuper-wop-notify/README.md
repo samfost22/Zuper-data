@@ -107,7 +107,13 @@ curl -sS -X POST https://<host>/dry-run \
 
 ### Deploy on Vercel
 
-`vercel.json` routes all paths to the Flask app as one Python serverless function. From `zuper-wop-notify/`: `vercel deploy --prod` (or the Vercel MCP/dashboard). Set the env vars from `.env.example` in Project → Settings → Environment Variables and redeploy. Production `*.vercel.app` URLs are public by default; preview URLs are usually behind Vercel Authentication, so point Zuper at the **production** URL.
+Currently deployed (project `zuper-wop-notify-bridge` on Sam's Vercel account):
+
+- Public production URL: `https://zuper-wop-notify-bridge.vercel.app` (health verified green; webhook endpoint is `https://zuper-wop-notify-bridge.vercel.app/zuper-webhook`).
+- Until env vars are set, `/zuper-webhook` and `/dry-run` return **401** for everything (fail closed — no secret is configured yet).
+- Set the env vars from `.env.example` in Vercel → Project → Settings → Environment Variables (Production) and redeploy.
+
+Vercel deploys this folder zero-config as a Flask app (`app.py` exposes the WSGI `app`; `vercel.json` also works for the legacy builds pipeline). Point Zuper at the canonical `https://<project>.vercel.app` production domain — the `<project>-<team>.vercel.app` alias and preview URLs sit behind Vercel Authentication and will 302 webhook POSTs to an SSO page. Alternatively any host running `gunicorn` behind HTTPS works (see above).
 
 ## Verifying with one real module WOP job
 
