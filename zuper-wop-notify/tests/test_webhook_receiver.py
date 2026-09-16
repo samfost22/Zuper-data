@@ -49,7 +49,7 @@ def test_webhook_skips_non_allowlisted_event(monkeypatch):
     resp = client.post(
         "/zuper-webhook",
         headers=_headers(),
-        json={"event": "job.create", "data": {"job_uid": "abc"}},
+        json={"event": "job.deleted", "data": {"job_uid": "abc"}},
     )
     assert resp.status_code == 200
     body = resp.get_json()

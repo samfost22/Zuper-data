@@ -52,6 +52,8 @@ def test_event_allowlist_default_and_custom(monkeypatch):
         "job.update_status",
         "job.status_update",
         "job.update_schedule",
+        "job.created",
+        "job.create",
     ]
     assert filters.event_is_allowed("job.status_changed")
     assert filters.event_is_allowed("job.updated")
@@ -59,7 +61,8 @@ def test_event_allowlist_default_and_custom(monkeypatch):
     assert filters.event_is_allowed("JOB.UPDATE_STATUS")
     assert filters.event_is_allowed("job.update_schedule")
     assert filters.event_is_allowed("job.status_update")
-    assert filters.event_is_allowed("job.create") is False
+    assert filters.event_is_allowed("job.created")
+    assert filters.event_is_allowed("job.deleted") is False
     assert filters.event_is_allowed("job.update", env_value="custom.event") is False
     assert filters.event_is_allowed("custom.event", env_value="custom.event")
 

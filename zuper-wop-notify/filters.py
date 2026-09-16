@@ -19,6 +19,8 @@ DEFAULT_EVENT_ALLOWLIST = (
     "job.update_status",
     "job.status_update",
     "job.update_schedule",
+    "job.created",
+    "job.create",
 )
 FRESHNESS_NOTE = "live Zuper API pull at notify time; NS→Zuper lag unknown"
 SOURCE_NAME = "zuper-wop-notify"
