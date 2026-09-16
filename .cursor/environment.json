@@ -1,0 +1,11 @@
+{
+  "name": "zuper-wop-notify",
+  "install": "bash .cursor/install.sh",
+  "terminals": [
+    {
+      "name": "wop-notify server",
+      "command": "cd zuper-wop-notify && PORT=8080 .venv/bin/gunicorn --workers 2 --bind 0.0.0.0:8080 webhook_receiver:app"
+    }
+  ],
+  "ports": [{ "name": "wop-notify", "port": 8080 }]
+}
